@@ -356,7 +356,8 @@ SymbolFileDWARF::SymbolFileDWARF(ObjectFile *objfile,
                                   // when this class parses .o files to
                                   // contain the .o file index/ID
       m_debug_map_module_wp(), m_debug_map_symfile(nullptr),
-      m_context(objfile->GetModule()->GetSectionList(), dwo_section_list),
+      m_context(objfile->/*GetModule()->*/GetSectionList(),
+                objfile->GetSectionList() /*dwo_section_list*/), // temp: todo!
       m_data_debug_loc(), m_data_debug_ranges(), m_data_debug_rnglists(),
       m_abbr(), m_info(), m_fetched_external_modules(false),
       m_supports_DW_AT_APPLE_objc_complete_type(eLazyBoolCalculate),

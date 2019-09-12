@@ -93,6 +93,11 @@ DisassemblerSP Disassembler::FindPluginForTarget(const TargetSP target_sp,
                                                  const ArchSpec &arch,
                                                  const char *flavor,
                                                  const char *plugin_name) {
+  if (arch.GetTriple().getArch() == llvm::Triple::wasm32 ||
+      arch.GetTriple().getArch() == llvm::Triple::wasm64) {
+    return DisassemblerSP(); // todo: show WAT disassembly
+  }
+
   if (target_sp && flavor == nullptr) {
     // FIXME - we don't have the mechanism in place to do per-architecture
     // settings.  But since we know that for now we only support flavors on x86

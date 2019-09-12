@@ -1431,6 +1431,16 @@ void Target::DidExec() {
 void Target::SetExecutableModule(ModuleSP &executable_sp,
                                  LoadDependentFiles load_dependent_files) {
   Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_TARGET));
+
+  ModuleList &loaded_modules = GetImages();
+  for (size_t i = 0; i < loaded_modules.GetSize(); ++i) {
+    const lldb::ModuleSP loaded_module = loaded_modules.GetModuleAtIndex(i);
+    bool found = (executable_sp.get() == loaded_module.get());
+    if (found) {
+      return;
+    }
+  }
+
   ClearModules(false);
 
   if (executable_sp) {

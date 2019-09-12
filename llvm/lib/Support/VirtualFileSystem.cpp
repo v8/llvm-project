@@ -264,8 +264,15 @@ private:
   // If this FS has its own working dir, use it to make Path absolute.
   // The returned twine is safe to use as long as both Storage and Path live.
   Twine adjustPath(const Twine &Path, SmallVectorImpl<char> &Storage) const {
-    if (!WD)
+    if (!WD) {
+      auto wd = getCurrentWorkingDirectory();
+      if (wd) {
+        Path.toVector(Storage);
+        sys::fs::make_absolute(Twine(wd.get()), Storage);
+        return Storage;
+      }
       return Path;
+    }
     Path.toVector(Storage);
     sys::fs::make_absolute(WD->Resolved, Storage);
     return Storage;

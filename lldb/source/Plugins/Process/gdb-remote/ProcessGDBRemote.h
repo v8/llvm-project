@@ -290,6 +290,8 @@ protected:
   using FlashRange = FlashRangeVector::Entry;
   FlashRangeVector m_erased_flash_ranges;
 
+  bool m_modules_loaded; // temp: todo!
+
   // Accessors
   bool IsRunning(lldb::StateType state) {
     return state == lldb::eStateRunning || IsStepping(state);

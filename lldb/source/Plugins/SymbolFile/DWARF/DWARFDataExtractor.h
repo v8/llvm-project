@@ -28,6 +28,8 @@ public:
 
   size_t GetDWARFSizeofInitialLength() const { return 4; }
   size_t GetDWARFSizeOfOffset() const { return 4; }
+
+  uint32_t GetAddressByteSize() const override { return 4; }
 };
 }
 

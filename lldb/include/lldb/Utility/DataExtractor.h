@@ -253,7 +253,7 @@ public:
   ///
   /// \return
   ///     The size in bytes of address values that will be extracted.
-  uint32_t GetAddressByteSize() const { return m_addr_size; }
+  virtual uint32_t GetAddressByteSize() const { return m_addr_size; }
 
   /// Get the number of bytes contained in this object.
   ///

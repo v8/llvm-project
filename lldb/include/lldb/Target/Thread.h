@@ -1156,6 +1156,8 @@ public:
 
   lldb::ThreadSP GetCurrentExceptionBacktrace();
 
+  bool IsWasm();
+
 protected:
   friend class ThreadPlan;
   friend class ThreadList;

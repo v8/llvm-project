@@ -305,7 +305,8 @@ ProcessGDBRemote::ProcessGDBRemote(lldb::TargetSP target_sp,
       m_waiting_for_attach(false), m_destroy_tried_resuming(false),
       m_command_sp(), m_breakpoint_pc_offset(0),
       m_initial_tid(LLDB_INVALID_THREAD_ID), m_replay_mode(false),
-      m_allow_flash_writes(false), m_erased_flash_ranges() {
+      m_allow_flash_writes(false), m_erased_flash_ranges(),
+      m_modules_loaded(false) {
   m_async_broadcaster.SetEventName(eBroadcastBitAsyncThreadShouldExit,
                                    "async thread should exit");
   m_async_broadcaster.SetEventName(eBroadcastBitAsyncContinue,
@@ -4828,6 +4829,11 @@ lldb::ModuleSP ProcessGDBRemote::LoadModuleAtAddress(const FileSpec &file,
 
 size_t ProcessGDBRemote::LoadModules(LoadedModuleInfoList &module_list) {
   using lldb_private::process_gdb_remote::ProcessGDBRemote;
+
+  // temp: todo!
+  if (m_modules_loaded)
+    return 1;
+  m_modules_loaded = true;
 
   // request a list of loaded libraries from GDBServer
   if (GetLoadedModuleList(module_list).Fail())

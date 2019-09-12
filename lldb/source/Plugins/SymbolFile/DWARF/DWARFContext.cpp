@@ -32,9 +32,9 @@ DWARFContext::LoadOrGetSection(SectionType main_section_type,
                                llvm::Optional<SectionType> dwo_section_type,
                                SectionData &data) {
   llvm::call_once(data.flag, [&] {
-    if (dwo_section_type && isDwo())
-      data.data = LoadSection(m_dwo_section_list, *dwo_section_type);
-    else
+    //if (dwo_section_type && isDwo())
+    //  data.data = LoadSection(m_dwo_section_list, *dwo_section_type);
+    //else
       data.data = LoadSection(m_main_section_list, main_section_type);
   });
   return data.data;

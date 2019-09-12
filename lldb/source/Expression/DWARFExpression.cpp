@@ -35,6 +35,8 @@
 #include "lldb/Target/StackID.h"
 #include "lldb/Target/Thread.h"
 
+#include "Plugins/Process/gdb-remote/GDBRemoteCommunicationClient.h"
+#include "Plugins/Process/gdb-remote/ProcessGDBRemote.h"
 #include "Plugins/SymbolFile/DWARF/DWARFUnit.h"
 
 using namespace lldb;
@@ -1171,13 +1173,22 @@ bool DWARFExpression::Evaluate(
 
   Process *process = nullptr;
   StackFrame *frame = nullptr;
+  bool isWasm = false;
+  process_gdb_remote::GDBRemoteCommunicationClient *gdb_comm = nullptr;
 
   if (exe_ctx) {
     process = exe_ctx->GetProcessPtr();
     frame = exe_ctx->GetFramePtr();
+    isWasm = exe_ctx->GetThreadPtr() && exe_ctx->GetThreadPtr()->IsWasm();
+    if (isWasm) {
+      gdb_comm =
+          &((process_gdb_remote::ProcessGDBRemote *)process)->GetGDBRemote();
+    }
   }
   if (reg_ctx == nullptr && frame)
     reg_ctx = frame->GetRegisterContext().get();
+
+  uint32_t wasmModuleId = isWasm && reg_ctx ? reg_ctx->GetPC() >> 32 : 0;
 
   if (initial_value_ptr)
     stack.push_back(*initial_value_ptr);
@@ -1841,6 +1852,21 @@ bool DWARFExpression::Evaluate(
     // DESCRIPTION: pops the top stack entry, adds it to the unsigned LEB128
     // constant operand and pushes the result.
     case DW_OP_plus_uconst:
+      if (isWasm) {
+        const uint64_t uconst_value = opcodes.GetULEB128(&offset);
+        uint64_t addr;
+        if (!gdb_comm->GetWasmGlobal(wasmModuleId, 0, addr)) {
+          return false;
+        }
+        uint32_t value = 0xdeadbeef;
+        if (!gdb_comm->WasmReadMemory(wasmModuleId, addr + uconst_value, &value,
+                                      sizeof(value))) {
+          return false;
+        }
+        stack.push_back(Scalar(value));
+        break;
+      }
+
       if (stack.empty()) {
         if (error_ptr)
           error_ptr->SetErrorString(
@@ -2644,6 +2670,36 @@ bool DWARFExpression::Evaluate(
 
       stack.back().GetScalar() = tls_load_addr;
       stack.back().SetValueType(Value::eValueTypeLoadAddress);
+    } break;
+
+    case DW_OP_WASM_location: {
+      if (isWasm) {
+        uint64_t wasm_op = opcodes.GetULEB128(&offset);
+        uint64_t index = opcodes.GetULEB128(&offset);
+        uint64_t value = 0;
+        switch (wasm_op) {
+        case 0: // Local
+          if (!gdb_comm->GetWasmLocal(wasmModuleId, index, value)) {
+            return false;
+          }
+          break;
+        case 1: // Global
+          if (!gdb_comm->GetWasmGlobal(wasmModuleId, index, value)) {
+            return false;
+          }
+          break;
+        case 2: // Operand Stack
+          if (!gdb_comm->GetWasmStackValue(wasmModuleId, index, value)) {
+            return false;
+          }
+          break;
+        default:
+          return false;
+        }
+        stack.push_back(Scalar(value));
+      } else {
+        return false;
+      }
     } break;
 
     // OPCODE: DW_OP_addrx (DW_OP_GNU_addr_index is the legacy name.)

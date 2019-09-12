@@ -79,7 +79,12 @@ void DynamicLoaderStatic::LoadAllImagesAtFileAddresses() {
   for (uint32_t idx = 0; idx < num_modules; ++idx) {
     ModuleSP module_sp(module_list.GetModuleAtIndexUnlocked(idx));
     if (module_sp) {
-      bool changed = false;
+      const llvm::Triple &triple_ref =
+          m_process->GetTarget().GetArchitecture().GetTriple();
+      bool isWasm = (triple_ref.getArch() == llvm::Triple::wasm64 ||
+                     triple_ref.getArch() == llvm::Triple::wasm32);
+ 
+	  bool changed = false;
       ObjectFile *image_object_file = module_sp->GetObjectFile();
       if (image_object_file) {
         SectionList *section_list = image_object_file->GetSectionList();
@@ -99,8 +104,10 @@ void DynamicLoaderStatic::LoadAllImagesAtFileAddresses() {
             // the file...
             SectionSP section_sp(section_list->GetSectionAtIndex(sect_idx));
             if (section_sp) {
-              if (m_process->GetTarget().SetSectionLoadAddress(
-                      section_sp, section_sp->GetFileAddress()))
+              if (isWasm) {
+                changed = true;
+              } else if (m_process->GetTarget().SetSectionLoadAddress(
+                         section_sp, section_sp->GetFileAddress()))
                 changed = true;
             }
           }

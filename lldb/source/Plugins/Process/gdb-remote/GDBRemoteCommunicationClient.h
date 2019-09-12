@@ -277,6 +277,14 @@ public:
 
   bool GetThreadStopInfo(lldb::tid_t tid, StringExtractorGDBRemote &response);
 
+  // WebAssembly-specific commands
+  bool GetWasmGlobal(uint32_t module_id, int index, uint64_t &value);
+  bool GetWasmLocal(uint32_t module_id, int index, uint64_t &value);
+  bool GetWasmStackValue(uint32_t module_id, int index, uint64_t &value);
+  bool WasmReadMemory(uint32_t module_id, lldb::addr_t vm_addr, void *buf,
+                      size_t size);
+  bool GetWasmCallStack(std::vector<lldb::addr_t> &call_stack_pcs);
+
   bool SupportsGDBStoppointPacket(GDBStoppointType type) {
     switch (type) {
     case eBreakpointSoftware:

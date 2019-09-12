@@ -66,8 +66,9 @@ SymbolVendorELF::CreateInstance(const lldb::ModuleSP &module_sp,
     return nullptr;
 
   static ConstString obj_file_elf("elf");
+  static ConstString obj_file_wasm("wasm");
   ConstString obj_name = obj_file->GetPluginName();
-  if (obj_name != obj_file_elf)
+  if (obj_name != obj_file_elf && obj_name != obj_file_wasm)
     return nullptr;
 
   lldb_private::UUID uuid = obj_file->GetUUID();

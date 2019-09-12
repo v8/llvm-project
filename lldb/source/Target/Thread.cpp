@@ -9,6 +9,7 @@
 #include "lldb/Target/Thread.h"
 #include "Plugins/Process/Utility/UnwindLLDB.h"
 #include "Plugins/Process/Utility/UnwindMacOSXFrameBackchain.h"
+#include "Plugins/Process/Utility/UnwindWasm.h"
 #include "lldb/Breakpoint/BreakpointLocation.h"
 #include "lldb/Core/Debugger.h"
 #include "lldb/Core/FormatEntity.h"
@@ -2053,6 +2054,12 @@ size_t Thread::GetStackFrameStatus(Stream &strm, uint32_t first_frame,
       strm, first_frame, num_frames, show_frame_info, num_frames_with_source);
 }
 
+bool Thread::IsWasm() {
+  const ArchSpec target_arch(CalculateTarget()->GetArchitecture());
+  const llvm::Triple::ArchType machine = target_arch.GetMachine();
+  return (machine == llvm::Triple::wasm32 || machine == llvm::Triple::wasm64);
+}
+
 Unwind *Thread::GetUnwinder() {
   if (!m_unwinder_up) {
     const ArchSpec target_arch(CalculateTarget()->GetArchitecture());
@@ -2073,6 +2080,11 @@ Unwind *Thread::GetUnwinder() {
     case llvm::Triple::systemz:
     case llvm::Triple::hexagon:
       m_unwinder_up.reset(new UnwindLLDB(*this));
+      break;
+
+    case llvm::Triple::wasm32:
+    case llvm::Triple::wasm64:
+      m_unwinder_up.reset(new UnwindWasm(*this));
       break;
 
     default:

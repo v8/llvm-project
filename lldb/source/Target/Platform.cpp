@@ -1911,6 +1911,13 @@ size_t Platform::GetSoftwareBreakpointTrapOpcode(Target &target,
     trap_opcode_size = sizeof(g_i386_opcode);
   } break;
 
+  case llvm::Triple::wasm32:
+  case llvm::Triple::wasm64: {
+    static const uint8_t g_i386_opcode[] = {0xCC}; // todo
+    trap_opcode = g_i386_opcode;
+    trap_opcode_size = sizeof(g_i386_opcode);
+  } break;
+
   default:
     llvm_unreachable(
         "Unhandled architecture in Platform::GetSoftwareBreakpointTrapOpcode");
