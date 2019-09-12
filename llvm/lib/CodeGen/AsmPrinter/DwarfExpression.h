@@ -276,6 +276,10 @@ public:
   /// the fragment described by \c Expr.
   void addFragmentOffset(const DIExpression *Expr);
 
+  /// Emit location information expressed via target's index + offset
+  /// It is an extension for WebAssembly locals, globals and operand stack.
+  void addTargetIndexLocation(unsigned Index, int64_t Offset);
+  
   void emitLegacySExt(unsigned FromBits);
   void emitLegacyZExt(unsigned FromBits);
 };

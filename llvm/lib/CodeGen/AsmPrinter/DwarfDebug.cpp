@@ -1088,6 +1088,11 @@ static DebugLocEntry::Value getDebugLocValue(const MachineInstr *MI) {
     MachineLocation MLoc(RegOp.getReg(), Op1.isImm());
     return DebugLocEntry::Value(Expr, MLoc);
   }
+  if (MI->getOperand(0).isTargetIndex()) {
+    auto Op = MI->getOperand(0);
+    return DebugLocEntry::Value(
+        Expr, TargetIndexLocation(Op.getIndex(), Op.getOffset()));
+  }
   if (MI->getOperand(0).isImm())
     return DebugLocEntry::Value(Expr, MI->getOperand(0).getImm());
   if (MI->getOperand(0).isFPImm())
@@ -1973,6 +1978,9 @@ static void emitDebugLocValue(const AsmPrinter &AP, const DIBasicType *BT,
     if (!DwarfExpr.addMachineRegExpression(TRI, Cursor, Location.getReg()))
       return;
     return DwarfExpr.addExpression(std::move(Cursor));
+  } else if (Value.isTargetIndexLocation()) {
+    TargetIndexLocation Loc = Value.getTargetIndexLocation();
+    DwarfExpr.addTargetIndexLocation(Loc.Index, Loc.Offset);
   } else if (Value.isConstantFP()) {
     APInt RawBytes = Value.getConstantFP()->getValueAPF().bitcastToAPInt();
     DwarfExpr.addUnsignedConstant(RawBytes);
