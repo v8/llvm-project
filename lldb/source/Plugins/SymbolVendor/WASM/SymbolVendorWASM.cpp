@@ -10,7 +10,6 @@
 
 #include <string.h>
 
-#include "Plugins/ObjectFile/WASM/ObjectFileWASM.h"
 #include "lldb/Core/Module.h"
 #include "lldb/Core/ModuleSpec.h"
 #include "lldb/Core/PluginManager.h"
@@ -24,7 +23,6 @@
 
 using namespace lldb;
 using namespace lldb_private;
-using namespace lldb_private::wasm;
 
 // SymbolVendorWASM constructor
 SymbolVendorWASM::SymbolVendorWASM(const lldb::ModuleSP &module_sp)

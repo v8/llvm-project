@@ -2535,7 +2535,7 @@ bool DWARFASTParserClang::ParseChildMembers(
                         nullptr, // RegisterContext *
                         module_sp, debug_info_data, die.GetCU(), block_offset,
                         block_length, eRegisterKindDWARF, &initialValue,
-                        nullptr, memberOffset, nullptr)) {
+                        nullptr, 0, memberOffset, nullptr)) { // TODO(paolosev)
                   member_byte_offset =
                       memberOffset.ResolveValue(nullptr).UInt();
                 }
@@ -2975,7 +2975,8 @@ bool DWARFASTParserClang::ParseChildMembers(
                                               debug_info_data, die.GetCU(),
                                               block_offset, block_length,
                                               eRegisterKindDWARF, &initialValue,
-                                              nullptr, memberOffset, nullptr)) {
+                                              nullptr, 0, memberOffset,
+					                          nullptr)) { // TODO(paolosev)
                   member_byte_offset =
                       memberOffset.ResolveValue(nullptr).UInt();
                 }

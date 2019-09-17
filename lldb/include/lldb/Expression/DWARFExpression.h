@@ -168,14 +168,14 @@ public:
   bool Evaluate(ExecutionContextScope *exe_scope,
                 lldb::addr_t loclist_base_load_addr,
                 const Value *initial_value_ptr, const Value *object_address_ptr,
-                Value &result, Status *error_ptr) const;
+                uint64_t byte_size, Value &result, Status *error_ptr) const;
 
   /// Wrapper for the static evaluate function that uses member variables to
   /// populate many operands
   bool Evaluate(ExecutionContext *exe_ctx, RegisterContext *reg_ctx,
                 lldb::addr_t loclist_base_load_addr,
                 const Value *initial_value_ptr, const Value *object_address_ptr,
-                Value &result, Status *error_ptr) const;
+                uint64_t byte_size, Value &result, Status *error_ptr) const;
 
   /// Evaluate a DWARF location expression in a particular context
   ///
@@ -240,8 +240,8 @@ public:
                        const lldb::offset_t length,
                        const lldb::RegisterKind reg_set,
                        const Value *initial_value_ptr,
-                       const Value *object_address_ptr, Value &result,
-                       Status *error_ptr);
+                       const Value *object_address_ptr, uint64_t byte_size,
+                       Value &result, Status *error_ptr);
 
   bool GetExpressionData(DataExtractor &data) const {
     data = m_data;

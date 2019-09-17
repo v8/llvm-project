@@ -1079,18 +1079,20 @@ bool DWARFExpression::DumpLocationForAddress(Stream *s,
 bool DWARFExpression::Evaluate(ExecutionContextScope *exe_scope,
                                lldb::addr_t loclist_base_load_addr,
                                const Value *initial_value_ptr,
-                               const Value *object_address_ptr, Value &result,
+                               const Value *object_address_ptr,
+                               uint64_t byte_size, Value &result,
                                Status *error_ptr) const {
   ExecutionContext exe_ctx(exe_scope);
   return Evaluate(&exe_ctx, nullptr, loclist_base_load_addr, initial_value_ptr,
-                  object_address_ptr, result, error_ptr);
+                  object_address_ptr, byte_size, result, error_ptr);
 }
 
 bool DWARFExpression::Evaluate(ExecutionContext *exe_ctx,
                                RegisterContext *reg_ctx,
                                lldb::addr_t loclist_base_load_addr,
                                const Value *initial_value_ptr,
-                               const Value *object_address_ptr, Value &result,
+                               const Value *object_address_ptr,
+							   uint64_t byte_size, Value &result,
                                Status *error_ptr) const {
   ModuleSP module_sp = m_module_wp.lock();
 
@@ -1138,8 +1140,8 @@ bool DWARFExpression::Evaluate(ExecutionContext *exe_ctx,
         if (length > 0 && lo_pc <= pc && pc < hi_pc) {
           return DWARFExpression::Evaluate(
               exe_ctx, reg_ctx, module_sp, m_data, m_dwarf_cu, offset, length,
-              m_reg_kind, initial_value_ptr, object_address_ptr, result,
-              error_ptr);
+              m_reg_kind, initial_value_ptr, object_address_ptr,
+              byte_size, result, error_ptr);
         }
         offset += length;
       }
@@ -1152,7 +1154,8 @@ bool DWARFExpression::Evaluate(ExecutionContext *exe_ctx,
   // Not a location list, just a single expression.
   return DWARFExpression::Evaluate(
       exe_ctx, reg_ctx, module_sp, m_data, m_dwarf_cu, 0, m_data.GetByteSize(),
-      m_reg_kind, initial_value_ptr, object_address_ptr, result, error_ptr);
+      m_reg_kind, initial_value_ptr, object_address_ptr, byte_size, result,
+	  error_ptr);
 }
 
 bool DWARFExpression::Evaluate(
@@ -1161,7 +1164,7 @@ bool DWARFExpression::Evaluate(
     const DWARFUnit *dwarf_cu, const lldb::offset_t opcodes_offset,
     const lldb::offset_t opcodes_length, const lldb::RegisterKind reg_kind,
     const Value *initial_value_ptr, const Value *object_address_ptr,
-    Value &result, Status *error_ptr) {
+    uint64_t byte_size, Value &result, Status *error_ptr) {
 
   if (opcodes_length == 0) {
     if (error_ptr)
@@ -1853,17 +1856,32 @@ bool DWARFExpression::Evaluate(
     // constant operand and pushes the result.
     case DW_OP_plus_uconst:
       if (isWasm) {
+        if (byte_size < 4) {
+          byte_size = 4; // default to 32 bit
+        }
+
+		// TODO(paolosev)
+        // Get current user-space stack pointer
+        // (For the moment, assume it is in $global0)
         const uint64_t uconst_value = opcodes.GetULEB128(&offset);
         uint64_t addr;
         if (!gdb_comm->GetWasmGlobal(wasmModuleId, 0, addr)) {
           return false;
         }
-        uint32_t value = 0xdeadbeef;
-        if (!gdb_comm->WasmReadMemory(wasmModuleId, addr + uconst_value, &value,
-                                      sizeof(value))) {
+
+        if (byte_size <= 4096) {
+          uint8_t buffer[4096];
+          if (!gdb_comm->WasmReadMemory(wasmModuleId, addr + uconst_value,
+                                        buffer, byte_size)) {
+            return false;
+          }
+          stack.push_back({buffer, static_cast<int>(byte_size)});
+        } else {
+          if (error_ptr)
+            error_ptr->SetErrorString("DW_OP_plus_uconst value size shouldn't "
+                                      "be bigger than 4096 bytes.");
           return false;
         }
-        stack.push_back(Scalar(value));
         break;
       }
 
