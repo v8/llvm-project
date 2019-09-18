@@ -2666,10 +2666,10 @@ bool GDBRemoteCommunicationClient::GetWasmGlobal(uint32_t module_id, int index,
 }
 
 bool GDBRemoteCommunicationClient::GetWasmLocal(uint32_t module_id, int index,
-                                                uint64_t &value) {
+                                                int frame_index, uint64_t &value) {
   StreamString packet;
   packet.Printf("qWasmLocal:");
-  packet.Printf("%d;%d", module_id, index);
+  packet.Printf("%d;%d;%d", module_id, index, frame_index);
   StringExtractorGDBRemote response;
   if (SendPacketAndWaitForResponse(packet.GetString(), response, false) !=
       PacketResult::Success) {
@@ -2693,11 +2693,11 @@ bool GDBRemoteCommunicationClient::GetWasmLocal(uint32_t module_id, int index,
 }
 
 bool GDBRemoteCommunicationClient::GetWasmStackValue(uint32_t module_id,
-                                                     int index,
+                                                     int index, int frame_index,
                                                      uint64_t &value) {
   StreamString packet;
   packet.PutCString("qWasmStackValue:");
-  packet.Printf("%d;%d", module_id, index);
+  packet.Printf("%d;%d;%d", module_id, index, frame_index);
   StringExtractorGDBRemote response;
   if (SendPacketAndWaitForResponse(packet.GetString(), response, false) !=
       PacketResult::Success) {

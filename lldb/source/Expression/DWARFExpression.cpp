@@ -2616,7 +2616,7 @@ bool DWARFExpression::Evaluate(
 
     // OPCODE: DW_OP_call_frame_cfa
     // OPERANDS: None
-    // DESCRIPTION: Specifies a DWARF expression that pushes the value of
+    // DESCRIPTION: Specifies a DWARF expression that pushes the value oflldb/source/Plugins/SymbolVendor/WASM/SymbolVendorWASM.cpp
     // the canonical frame address consistent with the call frame information
     // located in .debug_frame (or in the FDEs of the eh_frame section).
     case DW_OP_call_frame_cfa:
@@ -2695,9 +2695,14 @@ bool DWARFExpression::Evaluate(
         uint64_t wasm_op = opcodes.GetULEB128(&offset);
         uint64_t index = opcodes.GetULEB128(&offset);
         uint64_t value = 0;
+        int frame_index = -1;
+        if (frame) {
+          // TODO: Is this what we want? I believe this returns 0 for top frame, 1 for the frame below it, etc.
+          frame_index = frame->GetConcreteFrameIndex();
+        }
         switch (wasm_op) {
         case 0: // Local
-          if (!gdb_comm->GetWasmLocal(wasmModuleId, index, value)) {
+          if (!gdb_comm->GetWasmLocal(wasmModuleId, frame_index, index, value)) {
             return false;
           }
           break;
@@ -2707,7 +2712,7 @@ bool DWARFExpression::Evaluate(
           }
           break;
         case 2: // Operand Stack
-          if (!gdb_comm->GetWasmStackValue(wasmModuleId, index, value)) {
+          if (!gdb_comm->GetWasmStackValue(wasmModuleId, index, frame_index, value)) {
             return false;
           }
           break;
