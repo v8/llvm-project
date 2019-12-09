@@ -159,6 +159,7 @@ add_subdirectory(API)
 add_subdirectory(Shell)
 add_subdirectory(Unit)
 
+find_program(LLDB_CDLC_D8_PATH NAMES d8)
 # Configure the top level test suite.
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in

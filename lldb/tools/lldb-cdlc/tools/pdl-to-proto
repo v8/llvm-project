@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+# vim: expandtab:ts=2:sw=2:sts=2
+
+import argparse
+import json
+import sys
+
+
+def write_header(output):
+  output.write("""
+syntax = "proto3";
+
+package lldb.cdlc.protocol;
+
+""")
+
+
+def write_enum(output, spec, name):
+  output.write('  enum %s {\n' % name)
+  for n, enum in enumerate(spec):
+    output.write('    %s = %d;\n' % (enum.upper(), n))
+  output.write('  }\n')
+
+
+def get_standard_type(type_name):
+  type_map = {'integer': 'int32', 'binary': 'bytes'}
+  return type_map.get(type_name, type_name)
+
+def get_type(spec):
+  if spec.get('type') == 'array':
+    return 'repeated ' + get_type(spec['items'])
+
+  return get_standard_type(spec.get('type') or spec['$ref']) 
+
+def write_member(output, spec, message_id):
+  if 'enum' in spec:
+    enum_type = spec['name'].title()
+    write_enum(output, spec['enum'], enum_type)
+    output.write('  %s %s = %d;\n' % (enum_type, spec['name'], message_id))
+    return
+  output.write('  %s %s = %d;\n' % (get_type(spec), spec['name'], message_id))
+
+
+def write_type(output, spec):
+  assert spec['type'] == 'object', 'Non-object types not implemented'
+  output.write('message %s {\n' % spec['id'])
+
+  for message_id, member in enumerate(spec['properties']):
+    write_member(output, member, message_id + 1)
+  output.write('}\n\n')
+
+
+
+def make_rpc_type(rpc, spec, suffix):
+  if len(spec) == 1:
+    print(spec)
+    return get_type(spec[0]), spec
+  type_name = rpc[0].upper() + rpc[1:] + suffix
+  return type_name, {'id': type_name, 'type': 'object', 'properties': spec}
+
+
+def write_command(output, spec):
+  param_type_name, param_type = make_rpc_type(spec['name'], spec['parameters'],
+                                              'Request')
+  return_type_name, return_type = make_rpc_type(spec['name'], spec['returns'],
+                                                'Response')
+
+  output.write('  rpc %s(%s) returns (%s);\n' %
+               (spec['name'], param_type_name, return_type_name))
+
+  if len(spec['parameters']) > 1:
+    yield param_type
+  if len(spec['returns']) > 1:
+    yield return_type
+
+
+def write_spec(output, spec):
+  for domain in spec['domains']:
+    output.write('service %s {\n' % domain['domain'])
+    extra_types = []
+    for command in domain['commands']:
+      extra_types.extend(write_command(output, command))
+    output.write('}\n\n')
+    for ty in domain['types']:
+      write_type(output, ty)
+    for ty in extra_types:
+      write_type(output, ty)
+
+
+def script_main(args):
+  parser = argparse.ArgumentParser()
+  parser.add_argument('json_input', type=argparse.FileType())
+  parser.add_argument(
+      'output', type=argparse.FileType('w'), default='-', nargs='?')
+  options = parser.parse_args(args)
+
+  spec = json.load(options.json_input)
+  write_header(options.output)
+  write_spec(options.output, spec)
+
+
+if __name__ == '__main__':
+  script_main(sys.argv[1:])

@@ -32,3 +32,13 @@ add_lit_testsuite(check-lldb-repro
   EXCLUDE_FROM_CHECK_ALL
   DEPENDS lldb-test-deps)
 add_dependencies(check-lldb-repro check-lldb-repro-capture)
+
+configure_lit_site_cfg(
+  ${CMAKE_CURRENT_SOURCE_DIR}/tools/lldb-cdlc-unit/lit.site.cfg.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/tools/lldb-cdlc-unit/lit.site.cfg.py)
+
+add_lit_testsuite(check-lldb-cdlc "Running lldb lit test suite"
+  ${CMAKE_CURRENT_BINARY_DIR}/tools/lldb-cdlc
+  ${CMAKE_CURRENT_BINARY_DIR}/tools/lldb-cdlc-unit
+  DEPENDS lldb-test-deps
+  )

@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import time
+import http.server
+import socketserver
+import os
+from threading import Timer
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-port', default=8888, type=int)
+parser.add_argument('tool', default='/abs/path/to/lldb-cdlc')
+parser.add_argument('-path-subst', nargs='*', default=[])
+options = parser.parse_args()
+PORT = 8888
+cdlc = [
+    options.tool, '-interactive',
+    *('--url-subst={0}'.format(subst) for subst in options.path_subst)
+]
+
+print('Executing {0}'.format(' '.join(cdlc)))
+LC = subprocess.Popen(cdlc, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+StdIn = LC.stdin
+StdOut = LC.stdout
+
+
+def restartLC():
+  print('Restarting.')
+  global LC, StdIn, StdOut
+  LC.terminate()
+  try:
+    LC.wait(1)
+  except TimeoutError:
+    LC.kill()
+    LC.wait(1)
+  
+  print('Executing {0}'.format(' '.join(cdlc)))
+  LC = subprocess.Popen(cdlc, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+  StdIn = LC.stdin
+  StdOut = LC.stdout
+
+
+class ToolWatchdog(FileSystemEventHandler):
+
+  def __init__(self):
+    self.timer = None
+
+  def on_any_event(self, event):
+    if event.src_path == options.tool and os.access(event.src_path, os.X_OK):
+      if self.timer:
+        self.timer.cancel()
+      self.timer = Timer(2, restartLC)
+      self.timer.start()
+
+
+Tool = Observer()
+Tool.schedule(
+    ToolWatchdog(), path=os.path.dirname(options.tool), recursive=False)
+Tool.start()
+
+
+class CDLCServerHandler(http.server.SimpleHTTPRequestHandler):
+
+  def do_GET(self, *args):
+    print('Get:', args)
+
+  def do_OPTIONS(self, *args):
+    self.send_response(200)
+    self.send_header('Access-Control-Allow-Methods', 'POST')
+    self.send_header('Access-Control-Allow-Headers', 'accept, content-type')
+    self.send_header('Access-Control-Max-Age', '1728000')
+    self.end_headers()
+
+  def do_POST(self, *args):
+    Len = int(self.headers['Content-Length'])
+    Input = self.rfile.read(Len)
+    print('Content-Length: {0}\r\n\r\n{1}'.format(
+        self.headers['Content-Length'], Input.decode()))
+    StdIn.write('Content-Length: {0}\r\n\r\n{1}'.format(
+        self.headers['Content-Length'], Input.decode()).encode())
+    #print('Post:', Input)
+    StdIn.flush()
+    Response = StdOut.readline().decode()
+    assert Response.startswith('Content-Length: '), Response
+    Len = int(Response[len('Content-Length: '):].strip())
+    while StdOut.readline().decode().strip():
+      pass
+    Response = StdOut.read(Len)
+    print(Response)
+
+    self.send_response(200)
+    self.send_header('Content-type', 'application/json;charset=UTF-8')
+    self.end_headers()
+    self.wfile.write(Response)
+
+  def end_headers(self):
+    self.send_header('Access-Control-Allow-Origin', '*')
+    http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+
+while True:
+  try:
+    with socketserver.TCPServer(('', options.port), CDLCServerHandler) as httpd:
+      print('serving at port', options.port)
+      try:
+        httpd.serve_forever()
+      finally:
+        httpd.socket.close()
+  except OSError as E:
+    pass
+  except:
+    break
+  time.sleep(0.001)
+LC.kill()
