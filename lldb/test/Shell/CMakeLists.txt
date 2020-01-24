@@ -37,8 +37,10 @@ configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/tools/lldb-cdlc-unit/lit.site.cfg.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/tools/lldb-cdlc-unit/lit.site.cfg.py)
 
+if (LLDB_CDLC_D8_PATH)
 add_lit_testsuite(check-lldb-cdlc "Running lldb lit test suite"
   ${CMAKE_CURRENT_BINARY_DIR}/tools/lldb-cdlc
   ${CMAKE_CURRENT_BINARY_DIR}/tools/lldb-cdlc-unit
   DEPENDS lldb-test-deps
   )
+endif()
