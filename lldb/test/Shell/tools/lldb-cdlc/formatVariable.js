@@ -29,7 +29,7 @@ for (const message of input) {
     const module = new WebAssembly.Module(buf);
     const [memory, instance] = makeInstance(module, 32768);
     Heap = new Uint8Array(memory.buffer);
-    const OutputBase = instance.exports.__data_end.value;
+    const OutputBase = instance.exports.__heap_base.value;
     instance.exports.wasm_format(OutputBase, 256);
     print("Result: " + toString(Heap, OutputBase));
   } else {

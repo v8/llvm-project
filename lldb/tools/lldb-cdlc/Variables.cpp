@@ -354,7 +354,7 @@ std::unique_ptr<MemoryBuffer> VariablePrinter::generateCode(llvm::Module &M) {
   const char *LinkArgs[] = {"wasm-ld",
                             ObjFile->TmpName.c_str(),
                             "--export=wasm_format",
-                            "--export=__heap_start",
+                            "--export=__heap_base",
                             "--export=__data_end",
                             "--no-entry",
                             "--allow-undefined",

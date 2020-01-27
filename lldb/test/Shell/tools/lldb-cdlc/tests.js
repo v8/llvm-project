@@ -116,14 +116,6 @@ function makeInstance(module, memory_base) {
   const re = /smaller than initial ([0-9]+),/;
   const imports = {
     env: {
-      //__linear_memory : new WebAssembly.Memory({initial : 1, maximum : 1}),
-      __memory_base: memory_base,
-      __stack_pointer: new WebAssembly.Global({value: 'i32', mutable: true}, 0),
-      __indirect_function_table: new WebAssembly.Table({
-        initial: 2,
-        maximum: 2,
-        element: 'anyfunc',
-      }),
       __getMemory: proxyGetMemory,
       __debug: (x, y) => print('flag#' + x + ': ' + y)
     }
