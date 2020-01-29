@@ -313,7 +313,8 @@ WasmModule::getSourceLocationFromOffset(lldb::addr_t Offset) const {
             lldb::eSectionTypeCode, false);
     lldb_private::Address Addr(Section, Offset);
     if (LT->FindLineEntryByAddress(Addr, LE))
-      Lines.emplace_back(LE.file.GetPath(), LE.line, LE.column);
+      if (LE.line > 0 && LE.column > 0)
+        Lines.emplace_back(LE.file.GetPath(), LE.line, LE.column);
   }
   return Lines;
 }
