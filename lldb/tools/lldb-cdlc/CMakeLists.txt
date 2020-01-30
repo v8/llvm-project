@@ -118,6 +118,7 @@ add_custom_target(CDLCRuntime
   COMMAND clang++ ${CMAKE_CURRENT_SOURCE_DIR}/runtime/formatters.cc
   -std=c++14
   --target=wasm32 -emit-llvm ${optargs} -c -I/usr/include//x86_64-linux-gnu
+  -I/usr/include
   -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime/formatters.cc
   BYPRODUCTS formatters.bc
