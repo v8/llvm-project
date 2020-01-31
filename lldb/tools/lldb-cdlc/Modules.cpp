@@ -482,7 +482,10 @@ WasmModule::getVariableFormatScript(llvm::StringRef Name,
   Variable->GetType()->Dump(&Errs, true);
   lldb_private::Type *VarTy = Variable->GetType();
 
-  assert(Location.size() >= 1u && "Hmm.");
+  if (Location.empty())
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "No location found for variable '%s'",
+                                   Name.str().c_str());
   auto Code = Formatter.generateModule(Name, VarTy->GetFullCompilerType(),
                                        Location.front());
   if (!Code)
