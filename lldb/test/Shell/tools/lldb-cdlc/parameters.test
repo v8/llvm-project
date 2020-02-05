@@ -1,0 +1,10 @@
+// RUN: %p/Inputs/lsp-encode %p/Inputs/parameters.json \
+// RUN: | %lldbcdlc 2>/dev/null \
+// RUN: | FileCheck %s
+
+// CHECK: ["params.c"]
+
+// CHECK: "PARAMETER"
+// CHECK-SAME: "PARAMETER"
+// CHECK-SAME: "PARAMETER"
+// CHECK-SAME: "GLOBAL"
