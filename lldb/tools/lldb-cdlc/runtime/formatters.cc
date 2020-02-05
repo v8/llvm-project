@@ -5,10 +5,11 @@
 #include <type_traits>
 #include <utility>
 
+#undef DEBUG
 #ifndef NDEBUG
 #define DEBUG(identifier, value) __debug((identifier), (value))
 #else
-#define DEBUG()
+#define DEBUG(...)
 #endif
 
 extern "C" {
