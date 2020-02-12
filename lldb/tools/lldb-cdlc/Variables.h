@@ -58,7 +58,7 @@ private:
   llvm::Expected<StringSlice> formatArray(
       llvm::IRBuilder<> &Builder, llvm::Value *Buffer, llvm::Value *Size,
       llvm::StringRef Name, const lldb_private::CompilerType &ElementType,
-      const MemoryLocation &Variable, size_t ArraySize, bool Incomplete);
+      const MemoryLocation &Variable, uint64_t ArraySize, bool Incomplete);
 
   llvm::LLVMContext MainContext;
   std::map<llvm::StringRef, std::function<llvm::FunctionCallee(llvm::Module &)>>

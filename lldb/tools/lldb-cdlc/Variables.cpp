@@ -189,7 +189,7 @@ VariablePrinter::formatAggregate(IRBuilder<> &Builder, Value *Buffer,
 Expected<VariablePrinter::StringSlice> VariablePrinter::formatArray(
     IRBuilder<> &Builder, Value *Buffer, Value *Size, StringRef Name,
     const lldb_private::CompilerType &ElementType,
-    const MemoryLocation &Variable, size_t ArraySize, bool Incomplete) {
+    const MemoryLocation &Variable, uint64_t ArraySize, bool Incomplete) {
   assert(!Incomplete && "not implemented");
   auto &M = *Builder.GetInsertBlock()->getModule();
   auto ElementSize = ElementType.GetByteSize(nullptr);
@@ -237,7 +237,7 @@ VariablePrinter::formatVariable(IRBuilder<> &Builder, Value *Buffer,
     return formatPrimitive(Builder, Buffer, Size, Name, VariableType, Variable);
 
   lldb_private::CompilerType ElementType;
-  size_t ArraySize;
+  uint64_t ArraySize;
   bool Incomplete;
   if (VariableType.IsArrayType(&ElementType, &ArraySize, &Incomplete))
     return formatArray(Builder, Buffer, Size, Name, ElementType, Variable,
