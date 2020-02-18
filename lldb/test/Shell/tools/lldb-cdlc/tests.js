@@ -112,12 +112,17 @@ function getMemory(module) {
   return null;
 }
 
+function sbrk(memorySize, increment) {
+  if (increment === 0) return memorySize;
+  return -1;
+}
+
 function makeInstance(module, memory_base) {
   const re = /smaller than initial ([0-9]+),/;
   const imports = {
     env: {
       __getMemory: proxyGetMemory,
-      __debug: (x, y) => print('flag#' + x + ': ' + y)
+      __debug: (x, y) => {}// print('flag#' + x + ': ' + y)
     }
   };
 
@@ -127,12 +132,14 @@ function makeInstance(module, memory_base) {
 
   try {
     imports.env[memory.name] = new WebAssembly.Memory({initial: 1, maximum: 1});
+    imports.env["sbrk"] = sbrk.bind(this, 1*1<<16);
     return [imports.env[memory.name], new WebAssembly.Instance(module, imports)];
   } catch (err) {
     if (err.name !== 'LinkError')
       throw err;
     print(err.message);
     const size = Number(err.message.match(re)[1]);
+    imports.env["sbrk"] = sbrk.bind(this, size*1<<16);
     imports.env[memory.name] = new WebAssembly.Memory({initial: size, maximum: size});
     print('Setting memory size to expected ' + size);
     return [imports.env[memory.name], new WebAssembly.Instance(module, imports)];

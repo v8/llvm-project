@@ -7,7 +7,10 @@
 #include "lldb/Utility/ConstString.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -28,6 +31,7 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
+#include <bits/stdint-uintn.h>
 #include <iostream>
 #include <system_error>
 
@@ -36,21 +40,6 @@ using namespace llvm;
 namespace lldb {
 namespace cdlc {
 
-static Function *
-createFunction(llvm::Module &M, const Twine &Name, Type *ReturnTy,
-               std::initializer_list<std::pair<StringRef, Type *>> Arguments) {
-  SmallVector<Type *, 1> ArgTys;
-  for (auto &Arg : Arguments)
-    ArgTys.push_back(Arg.second);
-
-  auto *F =
-      Function::Create(FunctionType::get(ReturnTy, ArgTys, false),
-                       GlobalValue::LinkageTypes::ExternalLinkage, Name, M);
-
-  for (auto Arg : zip_first(Arguments, F->args()))
-    std::get<1>(Arg).setName(std::get<0>(Arg).first);
-  return F;
-}
 
 // void __getLocal(uint64_t index, void* result);
 // static FunctionCallee getGetLocalCallback(Module &M) {
@@ -76,6 +65,19 @@ static FunctionCallee getArrayBeginFormatter(llvm::Module &M) {
                                B.getInt8PtrTy(), B.getInt32Ty());
 }
 
+// uint32_t get_scratch_pad_size(void* begin, void* end);
+static FunctionCallee getGetScratchPadSize(llvm::Module &M) {
+  IRBuilder<> B(M.getContext());
+  return M.getOrInsertFunction("get_scratch_pad_size", B.getInt32Ty(),
+                               B.getInt8PtrTy(), B.getInt8PtrTy());
+}
+
+// void* sbrk(intptr_t increment);
+static FunctionCallee getSBrk(llvm::Module &M) {
+  IRBuilder<> B(M.getContext());
+  return M.getOrInsertFunction("sbrk", B.getInt8PtrTy(), B.getInt32Ty());
+}
+
 // int format_sep(char *Buffer, int Size);
 static FunctionCallee getSepFormatter(llvm::Module &M) {
   IRBuilder<> B(M.getContext());
@@ -88,6 +90,13 @@ static FunctionCallee getArrayEndFormatter(llvm::Module &M) {
   IRBuilder<> B(M.getContext());
   return M.getOrInsertFunction("format_end_array", B.getInt32Ty(),
                                B.getInt8PtrTy(), B.getInt32Ty());
+}
+
+static Value *getHeapBase(IRBuilder<> &Builder) {
+  llvm::Module &M = *Builder.GetInsertBlock()->getModule();
+  Constant *Symbol = M.getOrInsertGlobal("__heap_base", Builder.getInt32Ty());
+  return Builder.CreatePointerBitCastOrAddrSpaceCast(Symbol,
+                                                     Builder.getInt8PtrTy());
 }
 
 static Value *readVarValue(IRBuilder<> &Builder, const MemoryLocation &Variable,
@@ -109,10 +118,22 @@ static Value *readVarValue(IRBuilder<> &Builder, const MemoryLocation &Variable,
 }
 
 void handleError(IRBuilder<> &Builder, Value *ReturnValue) {
+  Function *F = Builder.GetInsertBlock()->getParent();
+  LLVMContext &Context = F->getContext();
+  assert(F && "Broken IR builder");
+  BasicBlock *ErrorBlock = BasicBlock::Create(Context, "error", F);
+  IRBuilder<>(ErrorBlock)
+      .CreateRet(
+          ConstantPointerNull::get(cast<PointerType>(F->getReturnType())));
+
   Value *Cmp = Builder.CreateICmpSLT(ReturnValue, Builder.getInt32(0));
   assert(Builder.GetInsertPoint() != Builder.GetInsertBlock()->end());
   Instruction *IP = &*Builder.GetInsertPoint();
-  llvm::SplitBlockAndInsertIfThen(Cmp, IP, true);
+  llvm::SplitBlockAndInsertIfThen(Cmp, IP, false,
+                                  /*BranchWeights=*/nullptr,
+                                  /*DT=*/nullptr,
+                                  /*LI=*/nullptr,
+                                  /*ThenBlock=*/ErrorBlock);
   Builder.SetInsertPoint(IP);
 }
 
@@ -258,15 +279,19 @@ VariablePrinter::generateModule(StringRef Name,
   auto M = std::make_unique<llvm::Module>("wasm_eval", MainContext);
   IRBuilder<> Builder(MainContext);
 
-  auto *Entry = createFunction(*M, "wasm_format", Builder.getVoidTy(),
-                               {{"OutputBuffer", Builder.getInt8PtrTy()},
-                                {"BufferSize", Builder.getInt32Ty()}});
-  Builder.SetInsertPoint(BasicBlock::Create(MainContext, "entry", Entry));
-  Builder.SetInsertPoint(Builder.CreateRetVoid());
-  auto *Buffer = &*Entry->arg_begin();
-  auto *Size = &*(Entry->arg_begin() + 1);
+  FunctionCallee Entry =
+      M->getOrInsertFunction("wasm_format", Builder.getInt8PtrTy());
 
-  auto Status = formatVariable(Builder, Buffer, Size, Name, Type, Location);
+  Builder.SetInsertPoint(BasicBlock::Create(
+      MainContext, "entry", llvm::cast<llvm::Function>(Entry.getCallee())));
+  auto *ScratchPadBegin = getHeapBase(Builder);
+  auto *ScratchPadEnd = Builder.CreateCall(getSBrk(*M), {Builder.getInt32(0)});
+  auto *Size = Builder.CreateCall(getGetScratchPadSize(*M),
+                                  {ScratchPadBegin, ScratchPadEnd});
+  Builder.SetInsertPoint(Builder.CreateRet(ScratchPadBegin));
+
+  auto Status =
+      formatVariable(Builder, ScratchPadBegin, Size, Name, Type, Location);
   if (!Status)
     return Status.takeError();
 

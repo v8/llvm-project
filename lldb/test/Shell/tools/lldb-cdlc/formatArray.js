@@ -3,10 +3,12 @@
 // RUN: | FileCheck %s
 
 // CHECK-NOT: Didn't consume
+// CHECK: Heap base: [[BASE:[0-9]+]]
 // CHECK: Reading 4 bytes from offset 1024
 // CHECK: Reading 4 bytes from offset 1028
 // CHECK: Reading 4 bytes from offset 1032
 // CHECK: Reading 4 bytes from offset 1036
+// CHECK: Result at: [[BASE]]
 // CHECK: Result: {"type":"int","name":"A","value":[{"type":"int","name":"A[0]","value":"0"},{"type":"int","name":"A[1]","value":"4"},{"type":"int","name":"A[2]","value":"8"},{"type":"int","name":"A[3]","value":"12"}]}
 
 // void __getMemory(uint32_t offset, uint32_t size, void* result);
@@ -28,8 +30,9 @@ for (const message of input) {
     Heap = new Uint8Array(memory.buffer);
     const OutputBase = instance.exports.__heap_base.value;
 
-    instance.exports.wasm_format(OutputBase, 256);
-    print("Result: " + toString(Heap, OutputBase));
+    print('Heap base: ' + OutputBase)
+    print('Result at: ' + instance.exports.wasm_format());
+    print('Result: ' + toString(Heap, OutputBase));
   } else {
     print(JSON.stringify(message));
   }

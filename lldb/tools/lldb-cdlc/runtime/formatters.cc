@@ -242,6 +242,13 @@ int formatValue(T *Value, const char *Variable, char *Result, uint32_t Size) {
 } // namespace
 
 extern "C" {
+uint32_t get_scratch_pad_size(char *ScratchPadBegin, char *ScratchPadEnd) {
+  if (ScratchPadBegin >= ScratchPadEnd ||
+      ScratchPadEnd == reinterpret_cast<char *>(-1))
+    return 0;
+  return ScratchPadEnd - ScratchPadBegin;
+}
+
 int format_begin_array(const char *Variable, const char *Type, char *Result,
                        uint32_t Size) {
   Printer P(Result, Size);
