@@ -104,7 +104,7 @@ class CDLCServerHandler(http.server.SimpleHTTPRequestHandler):
 
 while True:
   try:
-    with socketserver.TCPServer(('', options.port), CDLCServerHandler) as httpd:
+    with socketserver.TCPServer(('127.0.0.1', options.port), CDLCServerHandler) as httpd:
       print('serving at port', options.port)
       try:
         httpd.serve_forever()
