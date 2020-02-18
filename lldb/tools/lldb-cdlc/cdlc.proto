@@ -41,9 +41,10 @@ message SourceLocation {
 
 message Variable {
   enum Scope {
-    LOCAL = 0;
-    PARAMETER = 1;
-    GLOBAL = 2;
+    UNKNOWN = 0;
+    LOCAL = 1;
+    PARAMETER = 2;
+    GLOBAL = 3;
   }
   Scope scope = 1;
   string name = 2;
