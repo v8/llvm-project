@@ -328,7 +328,7 @@ WasmModule::getOffsetFromSourceLocation(const SourceLocation &SourceLoc) const {
     lldb_private::SymbolContextList List;
     CU->ResolveSymbolContext(lldb_private::FileSpec(SourceLoc.File),
                              SourceLoc.Line, true, true,
-                             eSymbolContextEverything, List);
+                             eSymbolContextLineEntry, List);
     for (uint32_t I = 0; I < List.GetSize(); I++) {
       lldb_private::SymbolContext Sc;
       if (List.GetContextAtIndex(I, Sc) && Sc.line_entry.IsValid()) {
