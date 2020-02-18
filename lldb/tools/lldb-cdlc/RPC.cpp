@@ -180,18 +180,13 @@ static protocol::Variable_Scope toProtocolScope(ValueType Scope) {
   }
 }
 
-protocol::ListVariablesInScopeResponse
-extracted(const protocol::RawLocation &Loc,
-          protocol::ListVariablesInScopeResponse &Response) {
-  return setError(Response, makeNotFoundError(Loc.rawmoduleid()));
-}
 static protocol::ListVariablesInScopeResponse
 doListVariables(ModuleCache &MC, const protocol::RawLocation &Loc) {
   protocol::ListVariablesInScopeResponse Response;
 
   auto *Mod = MC.findModule(Loc.rawmoduleid());
   if (!Mod)
-    return extracted(Loc, Response);
+    return setError(Response, makeNotFoundError(Loc.rawmoduleid()));
 
   for (auto &Variable : Mod->getVariablesInScope(Loc.codeoffset())) {
     auto *ProtoVar = Response.add_variable();
