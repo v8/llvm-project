@@ -38,7 +38,7 @@ struct PathSubstitutionParser
   using llvm::cl::parser<std::pair<std::string, std::string>>::parser;
 
   bool parse(llvm::cl::Option &O, llvm::StringRef ArgName,
-             const std::string &ArgValue,
+             llvm::StringRef ArgValue,
              std::pair<std::string, std::string> &Result) {
     assert(ArgName == "url-subst");
     auto First = ArgValue.find('=');
@@ -53,11 +53,11 @@ struct PathSubstitutionParser
                      ArgValue + "'");
     if (First == 0)
       return O.error("Substitution syntax: 'find=replace'. 'find' is empty.");
-    if (First == ArgValue.length() - 1)
+    if (First == ArgValue.size() - 1)
       return O.error(
           "Substitution syntax: 'find=replace'. 'replace' is empty.");
-    Result.first = {ArgValue, 0, First};
-    Result.second = {ArgValue, First + 1, std::string::npos};
+    Result.first = ArgValue.substr(0, First).str();
+    Result.second = ArgValue.substr(First + 1, std::string::npos).str();
     return false;
   }
 };
@@ -356,7 +356,7 @@ bool ModuleCache::deleteModule(llvm::StringRef ScriptId) {
 }
 
 static llvm::SmallString<32>
-moduleHash(const Binary &Code, llvm::Optional<llvm::StringRef> SymbolsFile) {
+moduleHash(llvm::StringRef Code, llvm::Optional<llvm::StringRef> SymbolsFile) {
   llvm::MD5 Hash;
   llvm::MD5::MD5Result HashResult;
   Hash.update(Code);
@@ -381,7 +381,7 @@ ModuleCache::getModuleFromUrl(llvm::StringRef Id, llvm::StringRef Url,
   }
 
   auto Module =
-      Modules.emplace(Id, WasmModule::createFromUrl(Id, Url, SymbolsFile))
+      Modules.insert({Id, WasmModule::createFromUrl(Id, Url, SymbolsFile)})
           .first->second;
   if (Module) {
     llvm::errs() << "Loaded module " << Id << " with "
@@ -405,7 +405,8 @@ ModuleCache::getModuleFromCode(llvm::StringRef Id, llvm::StringRef ByteCode,
   }
 
   auto Module =
-      Modules.emplace(Id, WasmModule::createFromCode(Id, ByteCode, SymbolsFile))
+      Modules
+          .insert({Id, WasmModule::createFromCode(Id, ByteCode, SymbolsFile)})
           .first->second;
   if (Module) {
     llvm::errs() << "Loaded module " << Id << " with "
@@ -466,7 +467,7 @@ WasmModule::getVariableFormatScript(llvm::StringRef Name,
   if (!Code)
     return Code.takeError();
   auto WasmCode = Formatter.generateCode(**Code);
-  return WasmCode->getBuffer();
+  return WasmCode->getBuffer().str();
 }
 
 llvm::Expected<Binary>
@@ -491,7 +492,7 @@ WasmModule::getVariableFormatScript(llvm::StringRef Name,
   if (!Code)
     return Code.takeError();
   auto WasmCode = Formatter.generateCode(**Code);
-  return WasmCode->getBuffer();
+  return WasmCode->getBuffer().str();
 }
 
 } // namespace cdlc

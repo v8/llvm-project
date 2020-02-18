@@ -54,7 +54,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &O,
 LLDBLanguageComponentServiceImpl::run(llvm::StringRef ListeningPort) {
   grpc::ServerBuilder SB;
   LLDBLanguageComponentServiceImpl Service;
-  SB.AddListeningPort(ListeningPort, grpc::InsecureServerCredentials());
+  SB.AddListeningPort(ListeningPort.str(), grpc::InsecureServerCredentials());
   SB.RegisterService(&Service);
   std::unique_ptr<grpc::Server> Server(SB.BuildAndStart());
   llvm::errs() << "Listening on " << ListeningPort << "\n";
@@ -138,7 +138,7 @@ doSourceLocationToRawLocation(ModuleCache &MC,
            {Loc.sourcefile(), static_cast<uint32_t>(Loc.linenumber() + 1),
             static_cast<uint16_t>(Loc.columnnumber() + 1)})) {
     auto *RawLoc = Response.add_rawlocation();
-    RawLoc->set_rawmoduleid(Module->id());
+    RawLoc->set_rawmoduleid(Module->id().str());
     RawLoc->set_codeoffset(Offset);
   }
   return Response;

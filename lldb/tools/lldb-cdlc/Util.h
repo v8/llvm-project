@@ -1,6 +1,6 @@
 #ifndef LLDB_CDLC_UTIL_H_
 #define LLDB_CDLC_UTIL_H_
-#include "lldb/Symbol/TypeSystemClang.h"
+#include "Plugins/TypeSystem/Clang/TypeSystemClang.h"
 #include <cstddef>
 
 class ObjectFileELF;

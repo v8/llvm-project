@@ -8,6 +8,7 @@
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 
@@ -75,7 +76,7 @@ public:
 };
 
 class ModuleCache {
-  std::map<std::string, std::shared_ptr<WasmModule>> Modules;
+  llvm::StringMap<std::shared_ptr<WasmModule>> Modules;
   std::map<llvm::SmallString<32>, std::shared_ptr<WasmModule>> ModuleHashes;
 
 public:
