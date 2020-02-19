@@ -65,8 +65,7 @@ def use_lldb_substitutions(config):
         ToolSubst('%build',
                   command="'" + sys.executable + "'",
                   extra_args=build_script_args),
-        ToolSubst('%lldbcdlc',
-            command=FindTool('lldb-cdlc'), extra_args=['-interactive'])
+        ToolSubst('%lldbcdlc', command=FindTool('lldb-cdlc'))
         ]
 
     _disallow(config, 'lldb')

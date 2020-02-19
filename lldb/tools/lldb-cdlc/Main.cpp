@@ -14,7 +14,6 @@
 #include "llvm/Support/raw_ostream.h"
 
 llvm::cl::opt<llvm::StringRef> Port("port");
-llvm::cl::opt<bool> InteractiveMode("interactive");
 
 int main(int Argc, char **Argv) {
   if (!llvm::cl::ParseCommandLineOptions(Argc, Argv, "Description",
@@ -22,7 +21,5 @@ int main(int Argc, char **Argv) {
     return 7;
 
   lldb::cdlc::DefaultPluginsContext C;
-  if (InteractiveMode)
-    return lldb::cdlc::LLDBLanguageComponentServiceImpl::runInteractive();
-  return lldb::cdlc::LLDBLanguageComponentServiceImpl::run(Port);
+  return lldb::cdlc::LLDBLanguageComponentServiceImpl::runInteractive();
 }

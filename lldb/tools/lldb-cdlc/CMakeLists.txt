@@ -1,37 +1,22 @@
 find_package(Protobuf REQUIRED)
-include(FindPkgConfig)
-pkg_search_module(GRPC REQUIRED grpc++)
-
-find_program(GRPC_PLUGIN grpc_cpp_plugin)
 set(PROTOC $<TARGET_FILE:protobuf::protoc>)
 set(PROTO_SOURCES)
 
 
 function(add_proto name)
-  cmake_parse_arguments(ARG "GRPC" "" "" ${ARGN})
   set(PROTO_HDRS
     ${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.h
     )
   set(PROTO_SRCS
     ${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.cc
     )
-  if (ARG_GRPC)
-    set(PROTO_HDRS ${PROTO_HDRS}
-      ${CMAKE_CURRENT_BINARY_DIR}/cdlc.grpc.pb.h
-      )
-    set(PROTO_SRCS ${PROTO_SRCS}
-      ${CMAKE_CURRENT_BINARY_DIR}/cdlc.grpc.pb.cc
-      )
-  endif()
   set(PROTO_SOURCES ${PROTO_SOURCES} ${PROTO_SRCS} PARENT_SCOPE)
   add_custom_command(
     OUTPUT ${PROTO_SRCS} ${PROTO_HDRS}
     COMMAND ${PROTOC}
     ARGS
-    --grpc_out ${CMAKE_CURRENT_BINARY_DIR}
     --cpp_out ${CMAKE_CURRENT_BINARY_DIR}
     -I ${CMAKE_CURRENT_SOURCE_DIR}
-    --plugin=protoc-gen-grpc=${GRPC_PLUGIN}
     ${CMAKE_CURRENT_SOURCE_DIR}/${name}.proto
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${name}.proto
     )
@@ -41,7 +26,7 @@ set(LLDB_CDLC_TOOL_DIR ${CMAKE_CURRENT_BINARY_DIR})
 configure_file(lldb-cdlc-config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/lldb-cdlc-config.h @ONLY)
 
-add_proto(cdlc GRPC)
+add_proto(cdlc)
 add_library(LLDBCDLanguageComponent OBJECT
   Modules.cpp
   RPC.cpp
@@ -58,7 +43,6 @@ endif()
 
 target_link_libraries(LLDBCDLanguageComponent PUBLIC
   ${PROTOBUF_LIBRARIES}
-  ${GRPC_LIBRARIES}
   lldWasm
   lldDriver
   clangDaemon
@@ -68,7 +52,6 @@ get_target_property(CLANGD_INCLUDE_DIR clangDaemon SOURCE_DIR)
 target_include_directories(LLDBCDLanguageComponent PUBLIC
   ../../source
   ${CLANGD_INCLUDE_DIR}
-  ${GRPC_INCLUDE_DIRS}
   ${LLD_INCLUDE_DIRS}
   ${PROTOBUF_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}

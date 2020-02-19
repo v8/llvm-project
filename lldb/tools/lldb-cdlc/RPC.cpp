@@ -13,7 +13,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
-#include <grpcpp/impl/codegen/sync_stream.h>
 #include <memory>
 #include <type_traits>
 
@@ -48,18 +47,6 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &O,
   std::string S;
   google::protobuf::util::MessageToJsonString(M, &S);
   return O << S;
-}
-
-/*static*/ int
-LLDBLanguageComponentServiceImpl::run(llvm::StringRef ListeningPort) {
-  grpc::ServerBuilder SB;
-  LLDBLanguageComponentServiceImpl Service;
-  SB.AddListeningPort(ListeningPort.str(), grpc::InsecureServerCredentials());
-  SB.RegisterService(&Service);
-  std::unique_ptr<grpc::Server> Server(SB.BuildAndStart());
-  llvm::errs() << "Listening on " << ListeningPort << "\n";
-  Server->Wait();
-  return 0;
 }
 
 static std::unique_ptr<protocol::Error> makeError(protocol::Error_Code EC,
@@ -331,42 +318,6 @@ protected:
     return 1;
   }
   return 0;
-}
-
-grpc::Status LLDBLanguageComponentServiceImpl::addRawModule(
-    grpc::ServerContext *Context, const protocol::AddRawModuleRequest *Request,
-    protocol::AddRawModuleResponse *Response) {
-  *Response = doAddRawModule(MDB, *Request);
-  return grpc::Status::OK;
-}
-
-grpc::Status LLDBLanguageComponentServiceImpl::sourceLocationToRawLocation(
-    grpc::ServerContext *Context, const protocol::SourceLocation *Location,
-    protocol::SourceLocationToRawLocationResponse *Response) {
-  *Response = doSourceLocationToRawLocation(MDB, *Location);
-  return grpc::Status::OK;
-}
-
-grpc::Status LLDBLanguageComponentServiceImpl::rawLocationToSourceLocation(
-    grpc::ServerContext *Context, const protocol::RawLocation *Location,
-    protocol::RawLocationToSourceLocationResponse *Response) {
-  *Response = doRawLocationToSourceLocation(MDB, *Location);
-  return grpc::Status::OK;
-}
-
-grpc::Status LLDBLanguageComponentServiceImpl::listVariablesInScope(
-    grpc::ServerContext *Context, const protocol::RawLocation *Query,
-    protocol::ListVariablesInScopeResponse *Response) {
-  *Response = doListVariables(MDB, *Query);
-  return grpc::Status::OK;
-}
-
-grpc::Status LLDBLanguageComponentServiceImpl::evaluateVariable(
-    grpc::ServerContext *Context,
-    const protocol::EvaluateVariableRequest *Query,
-    protocol::EvaluateVariableResponse *Response) {
-  *Response = doEvaluateVariables(MDB, *Query);
-  return grpc::Status::OK;
 }
 
 } // namespace cdlc
