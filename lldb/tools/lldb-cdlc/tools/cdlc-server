@@ -18,7 +18,7 @@ parser.add_argument('-path-subst', nargs='*', default=[])
 options = parser.parse_args()
 PORT = 8888
 cdlc = [
-    options.tool, '-interactive',
+    options.tool,
     *('--url-subst={0}'.format(subst) for subst in options.path_subst)
 ]
 
