@@ -1,7 +1,6 @@
 #ifndef LLDB_CDLC_PROTOCOL_H_
 #define LLDB_CDLC_PROTOCOL_H_
 
-#include "grpc++//grpc++.h"
 #include "cdlc.pb.h"
 
 namespace lldb {

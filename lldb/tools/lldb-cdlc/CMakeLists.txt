@@ -91,19 +91,22 @@ add_lldb_tool(lldb-cdlc
   TransformUtils
   )
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(optargs -O1)
-else()
-  set(optargs -O3 -DNDEBUG)
-endif()
+option(LLDB_CDLC_BUILD_FORMATTERS "Build the formatters library for evaluator modules" OFF)
+if (LLDB_CDLC_BUILD_FORMATTERS)
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(optargs -O1)
+  else()
+    set(optargs -O3 -DNDEBUG)
+  endif()
 
-add_custom_target(CDLCRuntime
-  COMMAND clang++ ${CMAKE_CURRENT_SOURCE_DIR}/runtime/formatters.cc
-  -std=c++14
-  --target=wasm32 -emit-llvm ${optargs} -c -I/usr/include//x86_64-linux-gnu
-  -I/usr/include
-  -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime/formatters.cc
-  BYPRODUCTS formatters.bc
-  )
-add_dependencies(LLDBCDLanguageComponent CDLCRuntime)
+  add_custom_target(CDLCRuntime
+    COMMAND clang++ ${CMAKE_CURRENT_SOURCE_DIR}/runtime/formatters.cc
+    -std=c++14
+    --target=wasm32 -emit-llvm ${optargs} -c -I/usr/include//x86_64-linux-gnu
+    -I/usr/include
+    -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime/formatters.cc
+    BYPRODUCTS formatters.bc
+    )
+  add_dependencies(LLDBCDLanguageComponent CDLCRuntime)
+endif()
