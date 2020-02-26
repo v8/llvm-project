@@ -125,7 +125,7 @@ doSourceLocationToRawLocation(ModuleCache &MC,
            {Loc.sourcefile(), static_cast<uint32_t>(Loc.linenumber() + 1),
             static_cast<uint16_t>(Loc.columnnumber() + 1)})) {
     auto *RawLoc = Response.add_rawlocation();
-    RawLoc->set_rawmoduleid(Module->id().str());
+    RawLoc->set_rawmoduleid(Loc.rawmoduleid());
     RawLoc->set_codeoffset(Offset);
   }
   return Response;
