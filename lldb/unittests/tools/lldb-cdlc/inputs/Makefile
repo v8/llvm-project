@@ -1,12 +1,17 @@
-CXX=../../../../../out/Default/bin/clang
+CC=../../../../../out/Default/bin/clang
+CXX=../../../../../out/Default/bin/clang++
 
-INPUTS=$(wildcard *.c)
+INPUTS=$(wildcard *.cc) $(wildcard *.c)
+CFLAGS=-gfull -O0 --target=wasm32 -nostdlib -fdebug-prefix-map=`pwd`=. \
+	   -Wl,--no-entry,--allow-undefined,--export-all
+CXXFLAGS=$(CFLAGS)
 
-all: $(INPUTS:.c=.wasm)
+all: $(INPUTS:.c=.wasm) $(INPUTS:.cc=.wasm)
 
 %.wasm: %.c Makefile
-	$(CXX) -gfull -O0 --target=wasm32 -nostdlib -fdebug-prefix-map=`pwd`=. \
-	  -Wl,--no-entry,--allow-undefined,--export=Main -o $@ $(filter %.c,$^)
+	$(CC) $(CFLAGS) -o $@ $(filter %.c,$^)
+%.wasm: %.cc Makefile
+	$(CXX) $(CXXFLAGS) -o $@ $(filter %.cc,$^)
 
 %.dwo %stripped.wasm: %.wasm Makefile split-dwarf.py
 	python split-dwarf.py \
