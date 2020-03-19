@@ -164,8 +164,10 @@ WasmModule::createFromCode(llvm::StringRef Id, llvm::StringRef ByteCode,
 
   llvm::StringRef Filename = TF->TmpName;
   llvm::errs() << "Created temporary module " << Filename << "\n";
-  llvm::raw_fd_ostream O(TF->FD, false);
-  O << ByteCode;
+  {
+    llvm::raw_fd_ostream O(TF->FD, false);
+    O << ByteCode;
+  }
 
   auto NewModule = createFromUrl(Id, ("file://" + Filename).str(), SymbolsFile);
   NewModule->TempModule = std::move(*TF);
