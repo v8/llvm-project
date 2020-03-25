@@ -85,6 +85,46 @@ TEST_F(LLDBLanguageComponentTest, HelloRawToSourceLocation) {
   EXPECT_EQ(Loc.front().Line, 4u);
 }
 
+TEST_F(LLDBLanguageComponentTest, InlineRawToSourceLocation) {
+  auto *M = getModule("inline.wasm");
+  {
+    auto Loc = M->getSourceLocationFromOffset(0x167 - 0xFF);
+    EXPECT_EQ(Loc.size(), 1u);
+    if (Loc.empty())
+      return;
+    EXPECT_EQ(Loc.front().File, "inline.cc");
+    EXPECT_EQ(Loc.front().Column, 7u);
+    EXPECT_EQ(Loc.front().Line, 4u);
+  }
+  {
+    auto Loc = M->getSourceLocationFromOffset(0x19F - 0xFF);
+    EXPECT_EQ(Loc.size(), 1u);
+    if (Loc.empty())
+      return;
+    EXPECT_EQ(Loc.front().File, "inline.cc");
+    EXPECT_EQ(Loc.front().Column, 7u);
+    EXPECT_EQ(Loc.front().Line, 4u);
+  }
+  {
+    auto Loc = M->getSourceLocationFromOffset(0x1BB - 0xFF);
+    EXPECT_EQ(Loc.size(), 1u);
+    if (Loc.empty())
+      return;
+    EXPECT_EQ(Loc.front().File, "inline.cc");
+    EXPECT_EQ(Loc.front().Column, 7u);
+    EXPECT_EQ(Loc.front().Line, 10u);
+  }
+  {
+    auto Loc = M->getSourceLocationFromOffset(0x1DC - 0xFF);
+    EXPECT_EQ(Loc.size(), 1u);
+    if (Loc.empty())
+      return;
+    EXPECT_EQ(Loc.front().File, "inline.cc");
+    EXPECT_EQ(Loc.front().Column, 3u);
+    EXPECT_EQ(Loc.front().Line, 16u);
+  }  
+}
+
 TEST_F(LLDBLanguageComponentTest, AddScriptMissingScript) {
   const lldb::cdlc::WasmModule *M = getModule("@InvalidPath");
   EXPECT_FALSE(M->valid());
@@ -100,6 +140,70 @@ TEST_F(LLDBLanguageComponentTest, GlobalVariable) {
   auto Snippet = getModule("global.wasm")->getVariableFormatScript("I", 0x10);
   EXPECT_TRUE(!!Snippet);
   EXPECT_FALSE(Snippet->empty());
+}
+
+TEST_F(LLDBLanguageComponentTest, ClassStaticVariable) {
+  auto Variables = getModule("classstatic.wasm")->getVariablesInScope(0x10);
+  llvm::SmallVector<llvm::StringRef, 1> Names;
+  for (auto &V : Variables)
+    Names.push_back(V.Name);
+  EXPECT_THAT(Names, testing::UnorderedElementsAre("MyClass::I"));
+
+  auto Snippet = getModule("classstatic.wasm")->getVariableFormatScript("I", 0x10);
+  EXPECT_TRUE(!!Snippet);
+  EXPECT_FALSE(Snippet->empty());
+}
+
+TEST_F(LLDBLanguageComponentTest, InlineLocalVariable) {
+  auto *M = getModule("inline.wasm");
+  {
+    const int location = 0x167 - 0xFF;
+    auto Variables = M->getVariablesInScope(location);
+    llvm::SmallVector<llvm::StringRef, 1> Names;
+    for (auto &V : Variables)
+      Names.push_back(V.Name);
+    EXPECT_THAT(Names, testing::UnorderedElementsAre("x", "result", "x", "y", "dsq", "I"));
+
+    //auto Snippet = M->getVariableFormatScript("result", location);
+    //EXPECT_TRUE(!!Snippet);
+    //EXPECT_FALSE(Snippet->empty());
+  }
+  {
+    const int location = 0x19F - 0xFF;
+    auto Variables = M->getVariablesInScope(location);
+    llvm::SmallVector<llvm::StringRef, 1> Names;
+    for (auto &V : Variables)
+      Names.push_back(V.Name);
+    EXPECT_THAT(Names, testing::UnorderedElementsAre("x", "result", "x", "y", "dsq", "I"));
+
+    //auto Snippet = M->getVariableFormatScript("result", location);
+    //EXPECT_TRUE(!!Snippet);
+    //EXPECT_FALSE(Snippet->empty());
+  }
+  {
+    const int location = 0x1BB - 0xFF;
+    auto Variables = M->getVariablesInScope(location);
+    llvm::SmallVector<llvm::StringRef, 1> Names;
+    for (auto &V : Variables)
+      Names.push_back(V.Name);
+    EXPECT_THAT(Names, testing::UnorderedElementsAre("x", "y", "dsq", "I"));
+
+    //auto Snippet = M->getVariableFormatScript("dsq", location);
+    //EXPECT_TRUE(!!Snippet);
+    //EXPECT_FALSE(Snippet->empty());
+  }
+  {
+    const int location = 0x1DC - 0xFF;
+    auto Variables = M->getVariablesInScope(location);
+    llvm::SmallVector<llvm::StringRef, 1> Names;
+    for (auto &V : Variables)
+      Names.push_back(V.Name);
+    EXPECT_THAT(Names, testing::UnorderedElementsAre("I"));
+
+    //auto Snippet = M->getVariableFormatScript("I", location);
+    //EXPECT_TRUE(!!Snippet);
+    //EXPECT_FALSE(Snippet->empty());
+  }
 }
 
 TEST_F(LLDBLanguageComponentTest, Strings) {
