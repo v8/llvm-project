@@ -1,5 +1,5 @@
-CC=../../../../../out/Default/bin/clang
-CXX=../../../../../out/Default/bin/clang++
+CC=../../../../../build/bin/clang
+CXX=../../../../../build/bin/clang++
 
 INPUTS=$(wildcard *.cc) $(wildcard *.c)
 CFLAGS=-gfull -O0 --target=wasm32 -nostdlib -fdebug-prefix-map=`pwd`=. \

@@ -280,7 +280,11 @@ getVariableLocation(lldb_private::Module &Module, lldb::addr_t FrameOffset,
       MemLocation.Offset = Address;
       break;
     }
+    case DW_OP_fbreg: {
+      
+    }
     default:
+      llvm::errs() << "Unexpected wasm tag " << (int)Op;
       llvm_unreachable("Unhandled wasm tag");
     }
   }
