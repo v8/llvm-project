@@ -163,10 +163,6 @@ TEST_F(LLDBLanguageComponentTest, InlineLocalVariable) {
     for (auto &V : Variables)
       Names.push_back(V.Name);
     EXPECT_THAT(Names, testing::UnorderedElementsAre("x", "result", "x", "y", "dsq", "I"));
-
-    //auto Snippet = M->getVariableFormatScript("result", location);
-    //EXPECT_TRUE(!!Snippet);
-    //EXPECT_FALSE(Snippet->empty());
   }
   {
     const int location = 0x19F - 0xFF;
@@ -175,10 +171,6 @@ TEST_F(LLDBLanguageComponentTest, InlineLocalVariable) {
     for (auto &V : Variables)
       Names.push_back(V.Name);
     EXPECT_THAT(Names, testing::UnorderedElementsAre("x", "result", "x", "y", "dsq", "I"));
-
-    //auto Snippet = M->getVariableFormatScript("result", location);
-    //EXPECT_TRUE(!!Snippet);
-    //EXPECT_FALSE(Snippet->empty());
   }
   {
     const int location = 0x1BB - 0xFF;
@@ -187,10 +179,6 @@ TEST_F(LLDBLanguageComponentTest, InlineLocalVariable) {
     for (auto &V : Variables)
       Names.push_back(V.Name);
     EXPECT_THAT(Names, testing::UnorderedElementsAre("x", "y", "dsq", "I"));
-
-    //auto Snippet = M->getVariableFormatScript("dsq", location);
-    //EXPECT_TRUE(!!Snippet);
-    //EXPECT_FALSE(Snippet->empty());
   }
   {
     const int location = 0x1DC - 0xFF;
@@ -199,10 +187,6 @@ TEST_F(LLDBLanguageComponentTest, InlineLocalVariable) {
     for (auto &V : Variables)
       Names.push_back(V.Name);
     EXPECT_THAT(Names, testing::UnorderedElementsAre("I"));
-
-    //auto Snippet = M->getVariableFormatScript("I", location);
-    //EXPECT_TRUE(!!Snippet);
-    //EXPECT_FALSE(Snippet->empty());
   }
 }
 
